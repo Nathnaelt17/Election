@@ -23,7 +23,6 @@ function Signup() {
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
   const [signupError, setSignupError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignup = (e) => {
     e.preventDefault();
@@ -35,38 +34,41 @@ function Signup() {
 
     const emailPattern = /^[a-zA-Z0-9._%+-]+@(gmail\.com|yahoo\.com)$/;
     const phonePattern = /^[0-9]{10}$/;
-    const passwordPattern =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
     if (!emailPattern.test(email)) {
       setSignupError("Use gmail.com or yahoo.com");
       return;
     }
-
     if (!phonePattern.test(phone)) {
       setSignupError("Phone must be 10 digits");
       return;
     }
 
-    if (!passwordPattern.test(password)) {
-      setSignupError("Weak password");
+    if (password.length < 8) {
+      setSignupError("Password must be at least 8 characters");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setSignupError("Password must include at least one uppercase letter");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setSignupError("Password must include at least one lowercase letter");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setSignupError("Password must include at least one number");
+      return;
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      setSignupError("Password must include at least one special character");
       return;
     }
 
-    const newUser = {
-      name,
-      username,
-      email,
-      phone,
-      address,
-      dob,
-      password,
-    };
-
+    const newUser = { name, username, email, phone, address, dob, password };
     const users = JSON.parse(localStorage.getItem("users")) || [];
 
-    const exists = users.find((u) => u.email === email);
-    if (exists) {
+    if (users.find((u) => u.email === email)) {
       setSignupError("Email already registered");
       return;
     }
@@ -117,23 +119,7 @@ function Signup() {
           <Input icon={<FaCalendarAlt />} type="date" value={dob} onChange={setDob} />
 
           {/* Password */}
-          <div className="relative">
-            <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00C49A]" />
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-[#00C49A] focus:ring-4 focus:ring-[#00C49A]/20 outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#156064]"
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
+          <PasswordInput value={password} onChange={setPassword} />
 
           {/* Error */}
           {signupError && (
@@ -156,10 +142,10 @@ function Signup() {
               <Link to="/login" className="text-[#00C49A] font-semibold">Sign In</Link>
             </p>
           </div>
+
         </form>
       </div>
 
-      {/* Animations */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(25px); }
@@ -177,13 +163,10 @@ function Signup() {
   );
 }
 
-/* Reusable Input Component */
 function Input({ icon, type = "text", placeholder, value, onChange }) {
   return (
     <div className="relative">
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00C49A]">
-        {icon}
-      </div>
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00C49A]">{icon}</div>
       <input
         type={type}
         value={value}
@@ -191,6 +174,29 @@ function Input({ icon, type = "text", placeholder, value, onChange }) {
         placeholder={placeholder}
         className="w-full pl-10 pr-3 py-3 border-2 border-gray-200 rounded-xl focus:border-[#00C49A] focus:ring-4 focus:ring-[#00C49A]/20 outline-none transition"
       />
+    </div>
+  );
+}
+
+function PasswordInput({ value, onChange }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00C49A]" />
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Password"
+        className="w-full pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:border-[#00C49A] focus:ring-4 focus:ring-[#00C49A]/20 outline-none"
+      />
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#156064]"
+      >
+        {show ? <FaEyeSlash /> : <FaEye />}
+      </button>
     </div>
   );
 }
