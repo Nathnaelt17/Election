@@ -10,69 +10,81 @@ import {
   FaEye,
   FaEyeSlash,
   FaArrowRight,
+  FaIdCard,
 } from "react-icons/fa";
 
 function Signup() {
   const navigate = useNavigate();
+  const minimumDob = new Date();
+  minimumDob.setFullYear(minimumDob.getFullYear() - 18);
+  const maxDob = minimumDob.toISOString().split("T")[0];
 
   const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [fayda, setFayda] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [kebele, setKebele] = useState("");
+  const [woreda, setWoreda] = useState("");
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
-  const [signupError, setSignupError] = useState("");
+  const [signupErrors, setSignupErrors] = useState([]);
 
   const handleSignup = (e) => {
     e.preventDefault();
+    const errors = [];
 
-    if (!name || !username || !email || !phone || !address || !dob || !password) {
-      setSignupError("Please fill in all fields.");
-      return;
+    if (!name || !fayda || !phone || !city || !kebele || !woreda || !dob || !password) {
+      errors.push("Please fill in all fields.");
     }
 
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@(gmail\.com|yahoo\.com)$/;
+    const faydaPattern = /^\d{16}$/;
     const phonePattern = /^[0-9]{10}$/;
+    const woredaPattern = /^\d{2}$/;
 
-    if (!emailPattern.test(email)) {
-      setSignupError("Use gmail.com or yahoo.com");
-      return;
+    if (!faydaPattern.test(fayda)) {
+      errors.push("Fayda must be exactly 16 digits.");
     }
     if (!phonePattern.test(phone)) {
-      setSignupError("Phone must be 10 digits");
-      return;
+      errors.push("Phone must be 10 digits.");
+    }
+    if (!woredaPattern.test(woreda)) {
+      errors.push("Woreda must be exactly 2 digits.");
+    }
+
+    const birthDate = new Date(dob);
+    if (dob && birthDate > minimumDob) {
+      errors.push("You must be at least 18 years old.");
     }
 
     if (password.length < 8) {
-      setSignupError("Password must be at least 8 characters");
-      return;
+      errors.push("Password must be at least 8 characters.");
     }
     if (!/[A-Z]/.test(password)) {
-      setSignupError("Password must include at least one uppercase letter");
-      return;
+      errors.push("Password must include at least one uppercase letter.");
     }
     if (!/[a-z]/.test(password)) {
-      setSignupError("Password must include at least one lowercase letter");
-      return;
+      errors.push("Password must include at least one lowercase letter.");
     }
     if (!/[0-9]/.test(password)) {
-      setSignupError("Password must include at least one number");
-      return;
+      errors.push("Password must include at least one number.");
     }
     if (!/[^A-Za-z0-9]/.test(password)) {
-      setSignupError("Password must include at least one special character");
-      return;
+      errors.push("Password must include at least one special character.");
     }
 
-    const newUser = { name, username, email, phone, address, dob, password };
+    const newUser = { name, fayda, phone, city, kebele, woreda, dob, password };
     const users = JSON.parse(localStorage.getItem("users")) || [];
 
-    if (users.find((u) => u.email === email)) {
-      setSignupError("Email already registered");
+    if (users.find((u) => u.fayda === fayda)) {
+      errors.push("Fayda already registered.");
+    }
+
+    if (errors.length > 0) {
+      setSignupErrors(errors);
       return;
     }
 
+    setSignupErrors([]);
     users.push(newUser);
     localStorage.setItem("users", JSON.stringify(users));
     navigate("/login");
@@ -101,30 +113,51 @@ function Signup() {
           {/* Name */}
           <Input icon={<FaUserAlt />} placeholder="Full Name" value={name} onChange={setName} />
 
-          {/* Username */}
-          <Input icon={<FaUserAlt />} placeholder="Username" value={username} onChange={setUsername} />
-
-          {/* Email */}
-          <Input icon={<FaEnvelope />} type="email" placeholder="Email" value={email} onChange={setEmail} />
-
           {/* Phone */}
           <Input icon={<FaPhoneAlt />} placeholder="Phone" value={phone} onChange={setPhone} />
 
-          {/* Address */}
-          <div className="md:col-span-2">
-            <Input icon={<FaMapMarkerAlt />} placeholder="Address" value={address} onChange={setAddress} />
-          </div>
+          {/* Fayda */}
+          <Input
+            icon={<FaIdCard />}
+            type="number"
+            placeholder="Fayda"
+            value={fayda}
+            onChange={(value) => setFayda(value.replace(/\D/g, "").slice(0, 16))}
+            inputMode="numeric"
+            maxLength={16}
+          />
 
           {/* DOB */}
-          <Input icon={<FaCalendarAlt />} type="date" value={dob} onChange={setDob} />
+          <Input icon={<FaCalendarAlt />} type="date" value={dob} onChange={setDob} max={maxDob} />
+
+          {/* City */}
+          <Input icon={<FaMapMarkerAlt />}type="text" placeholder="City" value={city} onChange={setCity} />
+
+          {/* Kebele */}
+          <Input icon={<FaMapMarkerAlt />} type="text" placeholder="Kebele" value={kebele} onChange={setKebele} />
+
+          {/* Woreda */}
+          <Input
+            icon={<FaMapMarkerAlt />}
+            type="text"
+            placeholder="Woreda"
+            value={woreda}
+            onChange={(value) => setWoreda(value.replace(/\D/g, "").slice(0, 2))}
+            inputMode="numeric"
+            maxLength={2}
+          />
 
           {/* Password */}
           <PasswordInput value={password} onChange={setPassword} />
 
           {/* Error */}
-          {signupError && (
+          {signupErrors.length > 0 && (
             <div className="md:col-span-2 bg-red-100 border-l-4 border-red-500 p-3 rounded-lg animate-shake">
-              <p className="text-red-600 text-sm">{signupError}</p>
+              <ul className="text-red-600 text-sm space-y-1">
+                {signupErrors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -163,7 +196,7 @@ function Signup() {
   );
 }
 
-function Input({ icon, type = "text", placeholder, value, onChange }) {
+function Input({ icon, type = "text", placeholder, value, onChange, ...props }) {
   return (
     <div className="relative">
       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00C49A]">{icon}</div>
@@ -172,6 +205,7 @@ function Input({ icon, type = "text", placeholder, value, onChange }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        {...props}
         className="w-full pl-10 pr-3 py-3 border-2 border-gray-200 rounded-xl focus:border-[#00C49A] focus:ring-4 focus:ring-[#00C49A]/20 outline-none transition"
       />
     </div>

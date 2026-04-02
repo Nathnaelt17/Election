@@ -5,7 +5,7 @@ import { FaUserAlt, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 function Login() {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
+  const [Fayda, setFayda] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,21 +14,24 @@ function Login() {
     e.preventDefault();
 
     const users = JSON.parse(localStorage.getItem("users")) || [];
-    const loginIdentifier = username.trim();
+    const loginIdentifier = Fayda.trim();
 
     const foundUser = users.find(
       (user) =>
-        (user.username === loginIdentifier ||
-          user.email === loginIdentifier ||
-          user.phone === loginIdentifier) &&
+        (user.fayda === loginIdentifier || user.phone === loginIdentifier) &&
         user.password === password
     );
 
     if (foundUser) {
+      if (foundUser.hasVoted) {
+        setError("This account has already voted and cannot log in again.");
+        return;
+      }
+
       localStorage.setItem("user", JSON.stringify(foundUser));
       navigate("/Home");
     } else {
-      setError("Invalid username/email/phone or password.");
+      setError("Invalid Fayda/phone or password.");
     }
   };
 
@@ -57,12 +60,12 @@ function Login() {
             <FaUserAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00C49A]" />
             <input
               type="text"
-              value={username}
+              value={Fayda}
               onChange={(e) => {
-                setUsername(e.target.value);
+                setFayda(e.target.value);
                 setError("");
               }}
-              placeholder="Username / Email / Phone"
+              placeholder="Fayda /Phone"
               className="w-full pl-10 pr-3 py-3 border-2 border-gray-200 rounded-xl focus:border-[#00C49A] focus:ring-4 focus:ring-[#00C49A]/20 outline-none transition"
               required
             />
