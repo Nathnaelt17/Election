@@ -14,11 +14,11 @@ const partyCards = [
     detail:
       "Open the details page to read more about its identity and how it appears in election materials.",
     symbol: "wheat",
-    candidate: "Abiy Ahmed",
+    candidate: "Eyasu Elias Fantahun",
     regionalReps: [
-      { name: "Dagmawit Moges", region: "Addis Ababa" },
-      { name: "Solomon Desta", region: "Addis Ababa" },
-      { name: "Hanan Ibrahim", region: "Addis Ababa" }
+      { name: "Lelise Neme Sori", region: "Addis Ababa" },
+      { name: "Seid Ali Kemal", region: "Addis Ababa" },
+      { name: "Debresina Muse Manaye", region: "Addis Ababa" }
     ],
     detailPage: {
       intro:
@@ -54,11 +54,11 @@ const partyCards = [
     detail:
       "Open the details page to see a fuller description and how voters can recognize it.",
     symbol: "scale",
-    candidate: "Yilikal Getnet",
+    candidate: "Yohans Mekonnen Delelegn",
     regionalReps: [
-      { name: "Berhanu Nega", region: "Addis Ababa" },
-      { name: "Mesfin Woldemariam", region: "Addis Ababa" },
-      { name: "Yohannes Buayalew", region: "Addis Ababa" }
+      { name: "Elias Negasi Goytom", region: "Addis Ababa" },
+      { name: "Kebede Worku Tadesse", region: "Addis Ababa" },
+      { name: "Seble Dejene Zeleke", region: "Addis Ababa" }
     ],
     detailPage: {
       intro:
@@ -94,11 +94,11 @@ const partyCards = [
     detail:
       "Open the details page to learn more about the party's background and how users can recognize it.",
     symbol: "clock",
-    candidate: "Eskinder Nega",
+    candidate: "Getaneh Balcha Beshah",
     regionalReps: [
-      { name: "Eyob Tekalign", region: "Addis Ababa" },
-      { name: "Seblework Tadesse", region: "Addis Ababa" },
-      { name: "Tsegaye Reta", region: "Addis Ababa" }
+      { name: "Getye Yalew Jemere", region: "Addis Ababa" },
+      { name: "Misrak Moges Abate", region: "Addis Ababa" },
+      { name: "Tessema Ayalew Asres", region: "Addis Ababa" }
     ],
     detailPage: {
       intro:
@@ -298,7 +298,7 @@ function PartyCard({ id, name, shortName, description, detail, symbol, logoUrl, 
       <div className="mt-4 rounded-2xl bg-[#F4FBF8] border border-[#00C49A]/15 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#156064]/70">Candidate</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#156064]/70">HoPR Candidate</p>
             <p className="text-lg font-bold text-[#156064] mt-2">{candidate}</p>
           </div>
           <input
@@ -311,10 +311,11 @@ function PartyCard({ id, name, shortName, description, detail, symbol, logoUrl, 
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-2">
+        <p className="text-xs uppercase tracking-[0.25em] text-[#156064]/70 px-1">RC Candidates</p>
         {regionalReps.map((rep, index) => (
           <div key={index} className="rounded-xl bg-[#E8F5F0] border border-[#00C49A]/10 px-3 py-2 flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-[#156064]/60">{rep.region} Rep</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#156064]/60">{rep.region} RC Candidate</p>
               <p className="text-sm font-semibold text-[#156064] mt-1">{rep.name}</p>
             </div>
             <input
