@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "./supabaseClient";
 
 const partyCards = [
   {
@@ -13,8 +14,13 @@ const partyCards = [
     detail:
       "Open the details page to read more about its identity and how it appears in election materials.",
     symbol: "wheat",
+    candidate: "Abiy Ahmed",
+    regionalReps: [
+      { name: "Dagmawit Moges", region: "Addis Ababa" },
+      { name: "Solomon Desta", region: "Addis Ababa" },
+      { name: "Hanan Ibrahim", region: "Addis Ababa" }
+    ],
     detailPage: {
-      heading: "Prosperity Party",
       intro:
         "Prosperity Party is one of the nationally registered parties shown in Ethiopia's current election materials. For users of this app, it can be understood as a party with a broad national profile and a clear ballot identity.",
       overview:
@@ -48,8 +54,13 @@ const partyCards = [
     detail:
       "Open the details page to see a fuller description and how voters can recognize it.",
     symbol: "scale",
+    candidate: "Yilikal Getnet",
+    regionalReps: [
+      { name: "Berhanu Nega", region: "Addis Ababa" },
+      { name: "Mesfin Woldemariam", region: "Addis Ababa" },
+      { name: "Yohannes Buayalew", region: "Addis Ababa" }
+    ],
     detailPage: {
-      heading: "Ethiopian Citizens for Social Justice (EZEMA)",
       intro:
         "Ethiopian Citizens for Social Justice, commonly referred to as EZEMA, is one of the national political parties presented in Ethiopia's 7th General Election materials.",
       overview:
@@ -83,8 +94,13 @@ const partyCards = [
     detail:
       "Open the details page to learn more about the party's background and how users can recognize it.",
     symbol: "clock",
+    candidate: "Eskinder Nega",
+    regionalReps: [
+      { name: "Eyob Tekalign", region: "Addis Ababa" },
+      { name: "Seblework Tadesse", region: "Addis Ababa" },
+      { name: "Tsegaye Reta", region: "Addis Ababa" }
+    ],
     detailPage: {
-      heading: "Balderas for Genuine Democracy",
       intro:
         "Balderas for Genuine Democracy is an Ethiopian political party that emerged in Addis Ababa's political space and later became known nationally through opposition activism and public debate.",
       overview:
@@ -125,63 +141,86 @@ function Home() {
   const [selectedParty, setSelectedParty] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [voteReceipt, setVoteReceipt] = useState(null);
+  const [selectedRegionalReps, setSelectedRegionalReps] = useState([]);
+  const [selectedPartyIds, setSelectedPartyIds] = useState([]);
+
+  const handlePartySelect = (partyId) => {
+    if (selectedPartyIds.includes(partyId)) {
+      setSelectedPartyIds(selectedPartyIds.filter(id => id !== partyId));
+    } else {
+      setSelectedPartyIds([...selectedPartyIds, partyId]);
+    }
+  };
+
+  const handleRepToggle = (rep) => {
+    if (selectedRegionalReps.find(r => r.name === rep.name && r.region === rep.region)) {
+      setSelectedRegionalReps(selectedRegionalReps.filter(r => !(r.name === rep.name && r.region === rep.region)));
+    } else if (selectedRegionalReps.length < 3) {
+      setSelectedRegionalReps([...selectedRegionalReps, rep]);
+    }
+  };
 
   const users = JSON.parse(localStorage.getItem("users") || "[]");
   const registeredCount = users.length;
   const votedCount = users.filter((user) => user.hasVoted).length;
 
-  const openVoteModal = (party) => {
-    setSelectedParty(party);
-    setShowConfirmModal(true);
-  };
-
-  const closeVoteModal = () => {
-    setShowConfirmModal(false);
-    setSelectedParty(null);
-  };
-
-  const confirmVote = () => {
-    if (!selectedParty || !currentUser) {
+  const confirmVote = async () => {
+    if (!selectedPartyIds.length || selectedRegionalReps.length !== 3) {
+      alert("Please select at least one party and exactly 3 regional representatives.");
       return;
     }
 
-    const partyVoteNumber = votes[selectedParty.id] + 1;
+    const firstPartyId = selectedPartyIds[0];
+    const partyVoteNumber = votes[firstPartyId] + 1;
     const nextVotes = {
       ...votes,
-      [selectedParty.id]: partyVoteNumber,
+      [firstPartyId]: partyVoteNumber,
     };
-
-    localStorage.setItem("partyVotes", JSON.stringify(nextVotes));
 
     const users = JSON.parse(localStorage.getItem("users") || "[]");
     const updatedUsers = users.map((user) =>
       user.fayda === currentUser.fayda
-        ? { ...user, hasVoted: true, votedPartyId: selectedParty.id }
+        ? { ...user, hasVoted: true, votedPartyIds: selectedPartyIds, votedRegionalReps: selectedRegionalReps }
         : user
     );
     const updatedCurrentUser = {
       ...currentUser,
       hasVoted: true,
-      votedPartyId: selectedParty.id,
+      votedPartyIds: selectedPartyIds,
+      votedRegionalReps: selectedRegionalReps,
     };
 
+    const userId = currentUser?.id || currentUser?.fayda || "anonymous";
+    const { data, error } = await supabase.from("votes").insert([
+      {
+        user_id: userId,
+        party_ids: selectedPartyIds,
+        regional_reps: selectedRegionalReps,
+        created_at: new Date().toISOString(),
+      },
+    ]).select();
+
+    console.log("Supabase insert response:", { data, error });
+
+    if (error) {
+      console.error("Supabase insert error:", error);
+      alert(`Vote failed to send to server: ${error.message}`);
+      return;
+    }
+
+    // persist locally only after successful DB write
+    localStorage.setItem("partyVotes", JSON.stringify(nextVotes));
     localStorage.setItem("users", JSON.stringify(updatedUsers));
     localStorage.setItem("user", JSON.stringify(updatedCurrentUser));
-    localStorage.setItem(
-      "lastVoteReceipt",
-      JSON.stringify({
-        voterNumber: partyVoteNumber,
-        partyName: selectedParty.name,
-      })
-    );
-
     setVotes(nextVotes);
-    setShowConfirmModal(false);
+
     setVoteReceipt({
-      voterNumber: partyVoteNumber,
-      partyName: selectedParty.name,
+      partyNames: selectedPartyIds.map((id) => partyCards.find((p) => p.id === id).name).join(", "),
+      regionalReps: selectedRegionalReps,
     });
-    setSelectedParty(null);
+
+    setSelectedPartyIds([]);
+    setSelectedRegionalReps([]);
 
     window.setTimeout(() => {
       localStorage.removeItem("user");
@@ -204,22 +243,31 @@ function Home() {
 
       <div className="grid md:grid-cols-3 gap-8 relative z-10">
         {partyCards.map((party) => (
-          <PartyCard key={party.id} {...party} votes={votes[party.id]} onVote={() => openVoteModal(party)} />
+          <PartyCard 
+            key={party.id} 
+            {...party} 
+            selectedPartyIds={selectedPartyIds}
+            selectedRegionalReps={selectedRegionalReps}
+            onPartySelect={handlePartySelect}
+            onRepToggle={handleRepToggle}
+          />
         ))}
       </div>
 
-      {showConfirmModal && selectedParty && (
-        <VoteModal
-          partyName={selectedParty.name}
-          onConfirm={confirmVote}
-          onCancel={closeVoteModal}
-        />
-      )}
+      <div className="text-center mt-8 relative z-10">
+        <button
+          onClick={confirmVote}
+          disabled={!selectedPartyIds.length || selectedRegionalReps.length !== 3}
+          className="px-8 py-3 bg-gradient-to-r from-[#00C49A] to-[#156064] text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-[#00C49A]/40 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          Vote ({selectedPartyIds.length} parties, {selectedRegionalReps.length}/3 reps selected)
+        </button>
+      </div>
 
       {voteReceipt && (
         <ReceiptModal
-          partyName={voteReceipt.partyName}
-          voterNumber={voteReceipt.voterNumber}
+          partyNames={voteReceipt.partyNames}
+          regionalReps={voteReceipt.regionalReps}
         />
       )}
 
@@ -236,7 +284,7 @@ function Home() {
   );
 }
 
-function PartyCard({ id, name, shortName, description, detail, symbol, logoUrl, votes, onVote }) {
+function PartyCard({ id, name, shortName, description, detail, symbol, logoUrl, candidate, regionalReps, selectedPartyIds, selectedRegionalReps, onPartySelect, onRepToggle }) {
   return (
     <div className="bg-white/90 backdrop-blur-xl border border-white/30 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition transform hover:-translate-y-2">
       <PartyLogo logoUrl={logoUrl} name={name} symbol={symbol} shortName={shortName} />
@@ -247,16 +295,43 @@ function PartyCard({ id, name, shortName, description, detail, symbol, logoUrl, 
       <p className="text-gray-700 text-sm text-center mt-4 leading-6">{description}</p>
       <p className="text-gray-500 text-sm text-center mt-2 leading-6">{detail}</p>
 
+      <div className="mt-4 rounded-2xl bg-[#F4FBF8] border border-[#00C49A]/15 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#156064]/70">Candidate</p>
+            <p className="text-lg font-bold text-[#156064] mt-2">{candidate}</p>
+          </div>
+          <input
+            type="checkbox"
+            checked={selectedPartyIds.includes(id)}
+            onChange={() => onPartySelect(id)}
+            className="form-checkbox h-5 w-5 text-[#00C49A]"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-2">
+        {regionalReps.map((rep, index) => (
+          <div key={index} className="rounded-xl bg-[#E8F5F0] border border-[#00C49A]/10 px-3 py-2 flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#156064]/60">{rep.region} Rep</p>
+              <p className="text-sm font-semibold text-[#156064] mt-1">{rep.name}</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={selectedRegionalReps.some(r => r.name === rep.name && r.region === rep.region)}
+              onChange={() => onRepToggle(rep)}
+              disabled={!selectedRegionalReps.some(r => r.name === rep.name && r.region === rep.region) && selectedRegionalReps.length >= 3}
+              className="form-checkbox h-4 w-4 text-[#00C49A]"
+            />
+          </div>
+        ))}
+      </div>
+
       <div className="flex flex-col gap-2 mt-5">
         <Link to={`/more_info/${id}`} className="text-center text-sm text-[#00C49A] hover:underline">
           More Details
         </Link>
-        <button
-          onClick={onVote}
-          className="bg-gradient-to-r from-[#00C49A] to-[#156064] text-white py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-[#00C49A]/40 transition"
-        >
-          Vote
-        </button>
       </div>
     </div>
   );
@@ -278,43 +353,17 @@ function PartyLogo({ logoUrl, name, symbol, shortName }) {
   return <PartySymbol symbol={symbol} shortName={shortName} />;
 }
 
-function VoteModal({ partyName, onConfirm, onCancel }) {
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-20 px-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl animate-fadeIn">
-        <FaCheckCircle className="text-[#00C49A] text-4xl mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-[#156064] mb-2">Confirm Vote</h2>
-        <p className="text-gray-500 text-sm mb-5 leading-6">
-          Are you sure you want to cast your vote for {partyName}?
-        </p>
-
-        <div className="flex gap-3 justify-center">
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 rounded-lg bg-[#00C49A] text-white font-semibold hover:bg-[#0ea37f]"
-          >
-            Yes
-          </button>
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-          >
-            No
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ReceiptModal({ partyName, voterNumber }) {
+function ReceiptModal({ partyNames, regionalReps }) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-20 px-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl animate-fadeIn">
         <FaCheckCircle className="text-[#00C49A] text-4xl mx-auto mb-3" />
         <h2 className="text-xl font-bold text-[#156064] mb-2">Vote Recorded</h2>
         <p className="text-gray-600 text-sm leading-6">
-          Your vote for <span className="font-semibold text-[#156064]">{partyName}</span> has been saved.
+          Your vote for <span className="font-semibold text-[#156064]">{partyNames}</span> has been saved.
+        </p>
+        <p className="text-gray-600 text-sm leading-6 mt-2">
+          Regional representatives: {regionalReps.map(rep => `${rep.name} (${rep.region})`).join(', ')}
         </p>
         <p className="text-xs text-gray-500 mt-3">
           You&apos;ll be logged out and returned to the sign-in page shortly.

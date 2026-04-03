@@ -12,6 +12,7 @@ import {
   FaArrowRight,
   FaIdCard,
 } from "react-icons/fa";
+import { supabase } from "./supabaseClient";
 
 function Signup() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ function Signup() {
   const [password, setPassword] = useState("");
   const [signupErrors, setSignupErrors] = useState([]);
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     const errors = [];
 
@@ -85,6 +86,32 @@ function Signup() {
     }
 
     setSignupErrors([]);
+
+    const signupPayload = {
+      name,
+      fayda,
+      email: null,
+      phone,
+      city,
+      kefleketema,
+      woreda,
+      dob,
+      password,
+    };
+
+    console.log("Supabase signup payload:", signupPayload);
+    const { data, error } = await supabase
+      .from("users")
+      .insert([signupPayload])
+      .select();
+    console.log("Supabase signup response:", { data, error });
+
+    if (error) {
+      console.error("Supabase signup error:", error);
+      setSignupErrors([`Unable to save signup data: ${error.message}`]);
+      return;
+    }
+
     users.push(newUser);
     localStorage.setItem("users", JSON.stringify(users));
     navigate("/login");
