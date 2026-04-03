@@ -86,8 +86,6 @@ function Home() {
       <div className="text-center text-white mb-10 relative z-10">
         <h1 className="text-4xl font-bold">Parties in Ethiopia&apos;s Election</h1>
         <p className="text-sm opacity-90 mt-2 max-w-3xl mx-auto">
-          These cards now show real political parties listed by the National Election Board of Ethiopia
-          for the 7th General Election cycle instead of placeholder candidates.
         </p>
         <div className="w-20 h-1 bg-[#F8E16C] mx-auto mt-4 rounded-full"></div>
       </div>

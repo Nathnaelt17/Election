@@ -23,7 +23,7 @@ function Signup() {
   const [fayda, setFayda] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
-  const [kebele, setKebele] = useState("");
+  const [kefleketema, setKefleketema] = useState("");
   const [woreda, setWoreda] = useState("");
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +33,7 @@ function Signup() {
     e.preventDefault();
     const errors = [];
 
-    if (!name || !fayda || !phone || !city || !kebele || !woreda || !dob || !password) {
+    if (!name || !fayda || !phone || !city || !kefleketema || !woreda || !dob || !password) {
       errors.push("Please fill in all fields.");
     }
 
@@ -72,7 +72,7 @@ function Signup() {
       errors.push("Password must include at least one special character.");
     }
 
-    const newUser = { name, fayda, phone, city, kebele, woreda, dob, password };
+    const newUser = { name, fayda, phone, city, kefleketema, woreda, dob, password };
     const users = JSON.parse(localStorage.getItem("users")) || [];
 
     if (users.find((u) => u.fayda === fayda)) {
@@ -133,8 +133,8 @@ function Signup() {
           {/* City */}
           <Input icon={<FaMapMarkerAlt />}type="text" placeholder="City" value={city} onChange={setCity} />
 
-          {/* Kebele */}
-          <Input icon={<FaMapMarkerAlt />} type="text" placeholder="Kebele" value={kebele} onChange={setKebele} />
+          {/* Kefleketema */}
+          <Input icon={<FaMapMarkerAlt />} type="text" placeholder="Kefleketema" value={kefleketema} onChange={setKefleketema} />
 
           {/* Woreda */}
           <Input
